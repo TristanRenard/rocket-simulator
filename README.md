@@ -4,15 +4,15 @@ This is a simple rocket simulator that uses the CANNON.js physics engine and MQT
 
 ## Installation
   
-  ```bash
+```bash
   npm install
-  ```
+```
 
 ## Usage
   
-    ```bash
+```bash
     npm start
-    ```
+```
 
 ## MQTT Topics
 
