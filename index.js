@@ -11,17 +11,20 @@ const connectUrl = `${protocol}://${host}:${port}`
 const world = new CANNON.World()
 world.gravity.set(0, 0, 0)
 
-const rocketShape = new CANNON.Box(new CANNON.Vec3(1, 3, 1))
+const rocketShape = new CANNON.Cylinder(0.5, 0.5, 3, 20)
 const rocketBody = new CANNON.Body({
-  mass: 1,
+  mass: 100,
   position: new CANNON.Vec3(0, 0, 0),
   shape: rocketShape
 })
 
 world.addBody(rocketBody)
 
-const setMainEngineThrust = (thrust = 50) => {
-  rocketBody.applyLocalForce(new CANNON.Vec3(0, thrust, 0), new CANNON.Vec3(0, 0, 0))
+const setMainEngineThrust = (thrust = 10) => {
+  // console.log(rocketBody.velocity.x, rocketBody.velocity.y, rocketBody.velocity.z)
+  if (thrust <= 10 && rocketBody.velocity.x < 1 && rocketBody.velocity.y < 1 && rocketBody.velocity.z < 1) {
+    rocketBody.applyLocalImpulse(new CANNON.Vec3(0, thrust, 0), new CANNON.Vec3(0, 0, 0))
+  }
 }
 
 const tiltRocket = (thrust = 10) => {
@@ -30,8 +33,8 @@ const tiltRocket = (thrust = 10) => {
 }
 
 const rollRocket = (thrust = 10) => {
-  rocketBody.applyLocalForce(new CANNON.Vec3(0, 0, thrust / 3), new CANNON.Vec3(0, 0, 0))
-  rocketBody.applyLocalForce(new CANNON.Vec3(0, 0, -thrust / 3), new CANNON.Vec3(0, 2, 0))
+  rocketBody.applyLocalForce(new CANNON.Vec3(0, 0, -thrust / 3), new CANNON.Vec3(0, 0, 0))
+  rocketBody.applyLocalForce(new CANNON.Vec3(0, 0, thrust / 3), new CANNON.Vec3(0, 2, 0))
 }
 
 let prevState = {}
@@ -43,10 +46,10 @@ const publishState = () => {
   const angularVelocity = rocketBody.angularVelocity
   const state = {
     position: {
-      x: Math.round(position.x * 100) / 100,
-      y: Math.round(position.y * 100) / 100,
+      x: Math.round(position.x * 10000) / 1000,
+      y: Math.round(position.y * 10000) / 1000,
 
-      z: Math.round(position.z * 100) / 100
+      z: Math.round(position.z * 10000) / 1000
     },
     quaternion: {
       x: Math.round(quaternion.x * 100) / 100,
@@ -55,14 +58,14 @@ const publishState = () => {
       w: Math.round(quaternion.w * 100) / 100
     },
     velocity: {
-      x: Math.round(velocity.x * 100) / 100,
-      y: Math.round(velocity.y * 100) / 100,
-      z: Math.round(velocity.z * 100) / 100
+      x: Math.round(velocity.x * 10000) / 1000,
+      y: Math.round(velocity.y * 10000) / 1000,
+      z: Math.round(velocity.z * 10000) / 1000
     },
     agnularVelocity: {
-      x: Math.round(angularVelocity.x * 100) / 100,
-      y: Math.round(angularVelocity.y * 100) / 100,
-      z: Math.round(angularVelocity.z * 100) / 100
+      x: Math.round(angularVelocity.x * 10000) / 1000,
+      y: Math.round(angularVelocity.y * 10000) / 1000,
+      z: Math.round(angularVelocity.z * 10000) / 1000
     }
   }
   if (JSON.stringify(state) === JSON.stringify(prevState)) {
@@ -72,8 +75,12 @@ const publishState = () => {
   client.publish("rocket/state", JSON.stringify(state))
 }
 
+
+let count = 0
 const update = () => {
-  world.step(1 / 60)
+  count++
+  // console.log("Updating " + count + " times")
+  world.step(30 / 60)
   publishState()
 }
 
@@ -120,17 +127,4 @@ client.on("message", (topic, message) => {
   }
 })
 
-setInterval(update, 1 / 60)
-
-
-// mosquitto_pub -h localhost -t rocket/mainEngine -m 50
-// mosquitto_pub -h localhost -t rocket/tilt -m 50
-// mosquitto_pub -h localhost -t rocket/roll -m 50
-
-
-
-/* README.md
-
-
-
-*/
+setInterval(update, 30000 / 60)
